@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Book Reader</title>
 <style>
-:root{--bg:#f2f2f7;--fg:#000;--mut:#8e8e93;--card:#fff;--acc:#007aff;--bar:rgba(249,249,249,.8);--sep:rgba(60,60,67,.18);--sh:rgba(0,0,0,.28);--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#f2f2f7;--fg:#000;--mut:#8e8e93;--card:#fff;--acc:#007aff;--bar:rgba(249,249,249,.8);--sep:rgba(60,60,67,.18);--sh:rgba(0,0,0,.28);--on:#fff;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 :root[data-theme="sepia"]{--bg:#efe4cc;--fg:#3b2a14;--mut:#8a7650;--card:#f8f0dc;--acc:#a0522d;--bar:rgba(239,228,204,.82);--sep:rgba(90,60,20,.2)}
 :root[data-theme="dark"]{--bg:#000;--fg:#fff;--mut:#8e8e93;--card:#1c1c1e;--acc:#0a84ff;--bar:rgba(28,28,30,.8);--sep:rgba(84,84,88,.5);--sh:rgba(0,0,0,.9)}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
 header,footer{display:grid;align-items:center;padding:8px 14px;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);z-index:3}
-header{grid-template-columns:1fr auto 1fr;border-bottom:.5px solid var(--sep)}
-footer{grid-template-columns:auto 1fr auto auto;gap:10px;border-top:.5px solid var(--sep);display:none}
+header{padding-top:calc(8px + var(--sat));grid-template-columns:1fr auto 1fr;border-bottom:.5px solid var(--sep)}
+footer{padding-bottom:calc(8px + var(--sab));grid-template-columns:auto 1fr auto auto;gap:10px;border-top:.5px solid var(--sep);display:none}
 h1{font-size:1.02rem;font-weight:600;margin:0;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ic{justify-self:end;display:flex;gap:2px}
 button{font:inherit;font-size:1.02rem;background:none;color:var(--acc);border:0;padding:8px 10px;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
@@ -23,7 +23,7 @@ button svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;st
 #snd.off{opacity:.4}
 body.lib h1,body.lib #home,body.lib #snd,body.lib #fs{visibility:hidden}
 main{flex:1;min-height:0;position:relative;overflow:auto}
-#lib{padding:4px 18px 40px;max-width:900px;margin:0 auto}
+#lib{padding:4px 18px calc(40px + var(--sab));max-width:900px;margin:0 auto}
 .lt{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
 .lt h2{font-size:2.1rem;font-weight:700;margin:0;letter-spacing:-.02em}
 #pick{background:var(--acc);color:var(--on);font-weight:600;font-size:.95rem;padding:8px 16px;border-radius:999px}
@@ -79,7 +79,9 @@ const rq=(s,m,f)=>DB.then(d=>new Promise((ok,no)=>{const t=d.transaction(s,m),r=
 const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}};
 /* ---------- theme / sound / fullscreen ---------- */
 const themes=["light","sepia","dark"];let ti=Math.max(0,themes.indexOf(ls("theme")));
-const applyTheme=()=>{document.documentElement.dataset.theme=themes[ti];ls("theme",themes[ti])};applyTheme();
+function bars(){try{if(window.NativeBars){const r=document.documentElement.style;r.setProperty("--sat",NativeBars.top()+"px");r.setProperty("--sab",NativeBars.bottom()+"px");NativeBars.light(themes[ti]!=="dark")}}catch(e){}}
+const applyTheme=()=>{document.documentElement.dataset.theme=themes[ti];ls("theme",themes[ti]);bars()};applyTheme();
+[300,1200,3000].forEach(t=>setTimeout(bars,t));addEventListener("resize",bars);
 $("th").onclick=()=>{ti=(ti+1)%3;applyTheme()};
 let muted=ls("muted")==="1";$("snd").classList.toggle("off",muted);
 $("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").classList.toggle("off",muted)};
