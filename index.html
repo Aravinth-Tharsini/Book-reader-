@@ -3,131 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PDF Book Reader</title>
+<title>Book Reader</title>
 <style>
-:root{--bg:#f4efe6;--fg:#2b2118;--muted:#7a6b5b;--card:#fffaf0;--accent:#8a4b2a;--shadow:rgba(60,35,15,.35);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1511;--fg:#f1e8da;--muted:#a8998a;--card:#251e18;--accent:#e0a074;--shadow:rgba(0,0,0,.7)}}
-:root[data-theme="dark"]{--bg:#1a1511;--fg:#f1e8da;--muted:#a8998a;--card:#251e18;--accent:#e0a074;--shadow:rgba(0,0,0,.7)}
+:root{--bg:#f4efe6;--fg:#2b2118;--mut:#7a6b5b;--card:#fffaf0;--acc:#8a4b2a;--sh:rgba(60,35,15,.4);--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="sepia"]{--bg:#e8d9b8;--fg:#3b2a14;--mut:#7d6a48;--card:#f3e6c8;--acc:#7a3f1a}
+:root[data-theme="dark"]{--bg:#16120f;--fg:#f1e8da;--mut:#a8998a;--card:#241d17;--acc:#e0a074;--sh:rgba(0,0,0,.8);--on:#16120f}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:8px}
-h1{font-size:1.05rem;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-button,.btn{font:inherit;font-size:.9rem;background:var(--accent);color:var(--bg);border:0;border-radius:999px;padding:9px 16px;cursor:pointer}
-button.ghost{background:transparent;color:var(--fg);border:1px solid var(--muted)}
-button:disabled{opacity:.4}
-main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
-#drop{width:min(520px,88%);border:2px dashed var(--muted);border-radius:18px;padding:44px 20px;text-align:center;background:var(--card)}
-#drop.over{border-color:var(--accent)}
-#drop p{margin:6px 0 18px;color:var(--muted)}
-#drop .big{font-size:2.6rem;margin:0}
-#book{display:none;width:100%;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;display:flex;flex-direction:column;overflow:hidden;transition:background .3s}
+header,footer{display:flex;align-items:center;gap:8px;padding:8px 12px}
+header{justify-content:space-between}
+h1{font-size:1rem;margin:0;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button{font:inherit;font-size:.9rem;background:var(--acc);color:var(--on);border:0;border-radius:999px;padding:9px 15px;cursor:pointer}
+button.g{background:transparent;color:var(--fg);border:1px solid var(--mut)}
+button:disabled{opacity:.35}
+main{flex:1;min-height:0;position:relative;overflow:auto}
+#lib{padding:12px 16px 30px;max-width:900px;margin:0 auto}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px;margin-top:16px}
+.card{background:var(--card);border-radius:10px;padding:8px;position:relative;cursor:pointer;box-shadow:0 4px 10px var(--sh)}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:5px;display:block;background:#fff}
+.card b{display:block;font-size:.8rem;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card small{color:var(--mut);font-size:.72rem}
+.card i{position:absolute;top:2px;right:4px;font-style:normal;background:var(--bg);border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;color:var(--mut)}
+#empty{text-align:center;color:var(--mut);padding:40px 10px}
+#book{display:none;height:100%}
 #stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.stf__parent{filter:drop-shadow(0 12px 22px var(--shadow))}
-#loading{display:none;text-align:center;color:var(--muted)}
-#bar{width:220px;height:6px;background:var(--card);border-radius:3px;margin:12px auto 0;overflow:hidden}
-#bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
-footer{display:none;align-items:center;justify-content:center;gap:12px;padding:10px 16px 14px}
-#pg{min-width:90px;text-align:center;color:var(--muted);font-size:.9rem}
+.stf__parent{filter:drop-shadow(0 12px 22px var(--sh))}
+.page{background:#fff}
+.page canvas{width:100%;height:100%;display:block}
+#ld{display:none;position:absolute;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;color:var(--mut);z-index:5}
+#bar{width:220px;height:6px;background:var(--card);border-radius:3px;margin-top:12px;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--acc)}
+footer{display:none}
+#sl{flex:1;accent-color:var(--acc)}
+#pg{min-width:76px;text-align:center;color:var(--mut);font-size:.82rem}
 </style>
 </head>
 <body>
 <header>
-  <h1 id="title">PDF Book Reader</h1>
-  <button class="ghost" id="newBtn" style="display:none">Open another</button>
+  <button class="g" id="home">☰</button>
+  <h1 id="title">My Library</h1>
+  <span><button class="g" id="snd">🔊</button> <button class="g" id="th">🌓</button> <button class="g" id="fs">⛶</button></span>
 </header>
 <main>
-  <div id="drop">
-    <p class="big">📖</p>
-    <p>Choose a PDF and it turns into a page-turning book automatically.</p>
-    <button id="pick">Select PDF</button>
-    <input type="file" id="file" accept="application/pdf" hidden>
+  <div id="lib">
+    <button id="pick">＋ Open a PDF</button><input type="file" id="file" accept="application/pdf" hidden>
+    <div id="grid"></div>
+    <div id="empty">📖<br>Your books will appear here.<br>They are saved on this device, so you can read them offline.</div>
   </div>
-  <div id="loading"><div id="lmsg">Preparing…</div><div id="bar"><i></i></div></div>
   <div id="book"><div id="stage"><div id="flip"></div></div></div>
+  <div id="ld"><div id="lm">Opening…</div><div id="bar"><i></i></div></div>
 </main>
 <footer id="foot">
-  <button class="ghost" id="prev">‹ Prev</button>
+  <button class="g" id="pv">‹</button>
+  <input type="range" id="sl" min="1" max="1" value="1">
   <span id="pg"></span>
-  <button class="ghost" id="next">Next ›</button>
+  <button class="g" id="nx">›</button>
 </footer>
-
 <script src="pdf.min.js"></script>
 <script src="page-flip.browser.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
-let flip = null;
-
-$("pick").onclick = () => $("file").click();
-$("newBtn").onclick = () => location.reload();
-$("file").onchange = e => e.target.files[0] && load(e.target.files[0]);
-const drop = $("drop");
-["dragover","dragenter"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.add("over");}));
-["dragleave","drop"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.remove("over");}));
-drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) load(f); });
-
-async function load(file){
-  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) { alert("Please choose a PDF file."); return; }
-  $("drop").style.display = "none";
-  $("loading").style.display = "block";
-  $("title").textContent = file.name.replace(/\.pdf$/i, "");
-  try {
-    const pdf = await pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
-    const n = pdf.numPages, imgs = [];
-    let w = 0, h = 0;
-    for (let i = 1; i <= n; i++) {
-      $("lmsg").textContent = "Building book… page " + i + " of " + n;
-      $("bar").firstElementChild.style.width = (i / n * 100) + "%";
-      const page = await pdf.getPage(i);
-      const base = page.getViewport({scale: 1});
-      const scale = Math.min(2, 900 / base.width);
-      const vp = page.getViewport({scale});
-      const c = document.createElement("canvas");
-      c.width = vp.width; c.height = vp.height;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
-      await page.render({canvasContext: ctx, viewport: vp}).promise;
-      if (i === 1) { w = vp.width; h = vp.height; }
-      imgs.push(c.toDataURL("image/jpeg", 0.85));
+const $=id=>document.getElementById(id);
+pdfjsLib.GlobalWorkerOptions.workerSrc="pdf.worker.min.js";
+/* ---------- storage ---------- */
+const DB=new Promise((ok,no)=>{const r=indexedDB.open("bookreader",1);r.onupgradeneeded=()=>{r.result.createObjectStore("meta",{keyPath:"id"});r.result.createObjectStore("data")};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const rq=(s,m,f)=>DB.then(d=>new Promise((ok,no)=>{const t=d.transaction(s,m),r=f(t.objectStore(s));t.oncomplete=()=>ok(r.result);t.onerror=()=>no(t.error)}));
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}};
+/* ---------- theme / sound / fullscreen ---------- */
+const themes=["light","sepia","dark"];let ti=Math.max(0,themes.indexOf(ls("theme")));
+const applyTheme=()=>{document.documentElement.dataset.theme=themes[ti];ls("theme",themes[ti])};applyTheme();
+$("th").onclick=()=>{ti=(ti+1)%3;applyTheme()};
+let muted=ls("muted")==="1";$("snd").textContent=muted?"🔇":"🔊";
+$("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").textContent=muted?"🔇":"🔊"};
+$("fs").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+let ac;function snd(){if(muted)return;try{ac=ac||new AudioContext();const n=ac.sampleRate*.2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.3;const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=1800;s.connect(f).connect(ac.destination);s.start()}catch(e){}}
+/* ---------- library ---------- */
+async function showLib(){
+  if(flip){flip.destroy();flip=null}cur=null;
+  $("book").style.display="none";$("foot").style.display="none";$("lib").style.display="block";$("title").textContent="My Library";
+  const all=(await rq("meta","readonly",s=>s.getAll())).sort((a,b)=>b.time-a.time);
+  $("empty").style.display=all.length?"none":"block";
+  $("grid").innerHTML="";
+  all.forEach(m=>{
+    const c=document.createElement("div");c.className="card";
+    c.innerHTML='<img alt=""><b></b><small></small><i>×</i>';
+    c.querySelector("img").src=m.cover;c.querySelector("b").textContent=m.name;
+    c.querySelector("small").textContent="Page "+(m.page+1)+" of "+m.n;
+    c.onclick=async e=>{
+      if(e.target.tagName==="I"){if(confirm("Remove this book from the device?")){await rq("meta","readwrite",s=>s.delete(m.id));await rq("data","readwrite",s=>s.delete(m.id));showLib()}return}
+      const buf=await rq("data","readonly",s=>s.get(m.id));openBook(buf,m)};
+    $("grid").appendChild(c);
+  });
+}
+$("home").onclick=showLib;
+$("pick").onclick=()=>$("file").click();
+$("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  const buf=await f.arrayBuffer();
+  const m={id:f.name+"|"+f.size+"|"+f.lastModified,name:f.name.replace(/\.pdf$/i,""),page:0,time:Date.now()};
+  const old=await rq("meta","readonly",s=>s.get(m.id));
+  if(old){openBook(buf,old);return}
+  openBook(buf,m,true)};
+/* ---------- reader ---------- */
+let flip=null,cur=null;
+const busy=(on,t)=>{$("ld").style.display=on?"flex":"none";if(t)$("lm").textContent=t};
+async function openBook(buf,meta,isNew){
+  busy(true,"Opening…");$("bar").firstElementChild.style.width="30%";
+  try{
+    const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
+    meta.n=pdf.numPages;
+    if(isNew||!meta.cover){
+      const p=await pdf.getPage(1),v=p.getViewport({scale:1}),sc=240/v.width,vv=p.getViewport({scale:sc}),c=document.createElement("canvas");
+      c.width=vv.width;c.height=vv.height;await p.render({canvasContext:c.getContext("2d"),viewport:vv}).promise;
+      meta.cover=c.toDataURL("image/jpeg",.7);
+      await rq("data","readwrite",s=>s.put(buf,meta.id));
     }
-    openBook(imgs, w, h);
-  } catch (err) {
-    $("lmsg").textContent = "Couldn’t read that PDF. Try another file.";
-    $("newBtn").style.display = "inline-block";
-  }
+    meta.time=Date.now();await rq("meta","readwrite",s=>s.put(meta));
+    const p1=await pdf.getPage(1),b=p1.getViewport({scale:1});
+    cur={pdf,meta,w:b.width,h:b.height,buf};
+    $("lib").style.display="none";$("book").style.display="block";$("foot").style.display="flex";$("title").textContent=meta.name;
+    busy(false);build(meta.page||0);
+  }catch(e){busy(true,"Couldn’t read that PDF.");setTimeout(()=>{busy(false);showLib()},1800)}
 }
-
-function openBook(imgs, w, h){
-  $("loading").style.display = "none";
-  $("book").style.display = "block";
-  $("foot").style.display = "flex";
-  $("newBtn").style.display = "inline-block";
-  const stage = $("stage");
-  const portrait = innerWidth < 700;
-  const availW = stage.clientWidth - 16, availH = stage.clientHeight - 16;
-  const spreadW = portrait ? w : w * 2;
-  const k = Math.min(availW / spreadW, availH / h);
-  const pw = Math.floor(w * k), ph = Math.floor(h * k);
-  flip = new St.PageFlip($("flip"), {
-    width: pw, height: ph, size: "fixed", showCover: true, usePortrait: true,
-    maxShadowOpacity: .5, mobileScrollSupport: false, drawShadow: true, flippingTime: 800
-  });
-  flip.loadFromImages(imgs);
-  const upd = () => {
-    const i = flip.getCurrentPageIndex() + 1, t = flip.getPageCount();
-    $("pg").textContent = "Page " + i + " / " + t;
-    $("prev").disabled = i <= 1;
-    $("next").disabled = i >= t;
-  };
-  flip.on("flip", upd); upd();
-  $("prev").onclick = () => flip.flipPrev();
-  $("next").onclick = () => flip.flipNext();
-  addEventListener("keydown", e => {
-    if (e.key === "ArrowRight") flip.flipNext();
-    if (e.key === "ArrowLeft") flip.flipPrev();
-  });
+function build(startAt){
+  if(flip){flip.destroy();flip=null}
+  const {pdf,meta,w,h}=cur,n=meta.n,st=$("stage");
+  const portrait=innerWidth<700,k=Math.min((st.clientWidth-12)/(portrait?w:w*2),(st.clientHeight-12)/h);
+  const pw=Math.floor(w*k),ph=Math.floor(h*k),dpr=Math.min(devicePixelRatio||1,2);
+  $("flip").innerHTML="";const items=[],done=new Set();let q=Promise.resolve();
+  for(let i=0;i<n;i++){const d=document.createElement("div");d.className="page";d.dataset.density=(i===0||i===n-1)?"hard":"soft";d.appendChild(document.createElement("canvas"));items.push(d)}
+  const draw=i=>{if(i<0||i>=n||done.has(i))return;done.add(i);
+    q=q.then(async()=>{const p=await pdf.getPage(i+1),sc=Math.min(3,pw*dpr/p.getViewport({scale:1}).width),v=p.getViewport({scale:sc}),c=items[i].firstChild;
+      c.width=v.width;c.height=v.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise}).catch(()=>{})};
+  const around=i=>{for(let j=i-2;j<=i+4;j++)draw(j)};
+  flip=new St.PageFlip($("flip"),{width:pw,height:ph,size:"fixed",showCover:true,usePortrait:true,maxShadowOpacity:.5,mobileScrollSupport:false,flippingTime:750});
+  flip.loadFromHTML(items);
+  const sl=$("sl");sl.max=n;
+  const upd=()=>{const i=flip.getCurrentPageIndex();sl.value=i+1;$("pg").textContent=(i+1)+" / "+n;$("pv").disabled=i<=0;$("nx").disabled=i>=n-1;around(i);meta.page=i;clearTimeout(upd.t);upd.t=setTimeout(()=>rq("meta","readwrite",s=>s.put(meta)),600)};
+  flip.on("flip",upd);flip.on("changeState",e=>{if(e.data==="flipping")snd()});
+  if(startAt>0)flip.turnToPage(Math.min(startAt,n-1));
+  around(startAt);upd();
+  sl.oninput=()=>{flip.turnToPage(+sl.value-1);upd()};
+  $("pv").onclick=()=>flip.flipPrev();$("nx").onclick=()=>flip.flipNext();
 }
-if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+addEventListener("keydown",e=>{if(!flip)return;if(e.key==="ArrowRight")flip.flipNext();if(e.key==="ArrowLeft")flip.flipPrev()});
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},350)});
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+showLib();
 </script>
 </body>
 </html>
