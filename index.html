@@ -49,6 +49,30 @@ body.focus header,body.focus footer{display:none!important}
 body.focus main{padding-top:var(--sat);padding-bottom:var(--sab);box-sizing:border-box}
 #ex{display:none;position:fixed;top:calc(8px + var(--sat));right:10px;z-index:9;width:36px;height:36px;padding:0;border-radius:50%;background:var(--bar);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--fg);font-size:1rem;opacity:.75;box-shadow:0 1px 6px rgba(0,0,0,.25)}
 body.focus #ex{display:block}
+footer{grid-template-columns:auto 1fr auto auto auto auto!important}
+#zv{display:none;position:fixed;inset:0;z-index:20;background:var(--bg);flex-direction:column}
+#zv.on{display:flex}
+#zt,#zb{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+#zt{padding-top:calc(8px + var(--sat));border-bottom:.5px solid var(--sep)}
+#zb{padding-bottom:calc(8px + var(--sab));border-top:.5px solid var(--sep);justify-content:space-around;gap:4px}
+#zs{flex:1;overflow:auto;touch-action:none;position:relative;background:var(--sep)}
+#zw{position:relative;margin:0 auto}
+#zc{width:100%;display:block;background:#fff}
+#zh{position:absolute;inset:0}
+.hb{position:absolute;mix-blend-mode:multiply;opacity:.6;border-radius:2px}
+#zv button.tg{border:1px solid var(--acc);border-radius:999px;padding:7px 14px;font-size:.92rem}
+#zv button.tg.on{background:var(--acc);color:var(--on)}
+#zcol{width:34px;height:34px;padding:0;border-radius:50%;background:var(--dot,#ffe14d);border:2px solid var(--card);box-shadow:0 0 0 1px var(--mut)}
+#hs{display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4)}
+#hs.on{display:flex;align-items:flex-end}
+#hsh{background:var(--bg);width:100%;max-height:78%;border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding-bottom:var(--sab)}
+#hsh .t{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-weight:600}
+#hg{overflow:auto;padding:4px 14px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.ht{background:var(--card);border-radius:12px;padding:6px;position:relative;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ht img{width:100%;border-radius:8px;display:block;background:#fff}
+.ht small{color:var(--mut);font-size:.72rem}
+.ht i{position:absolute;top:-6px;right:-6px;font-style:normal;background:#ff3b30;color:#fff;border-radius:50%;width:22px;height:22px;line-height:21px;text-align:center}
+body.rd header,body.rd footer{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;border-color:transparent}
 </style>
 </head>
 <body>
@@ -71,8 +95,16 @@ body.focus #ex{display:block}
   <button id="pv">‹</button>
   <input type="range" id="sl" min="1" max="1" value="1">
   <span id="pg"></span>
+  <button id="zm" aria-label="Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5M8.5 11h5M11 8.5v5"/></svg></button>
+  <button id="hlb" aria-label="Highlights"><svg viewBox="0 0 24 24"><path d="M4 20l1-4 11-11 3 3L8 19z"/><path d="M14 7l3 3"/></svg></button>
   <button id="nx">›</button>
 </footer>
+<div id="zv">
+  <div id="zt"><button id="zx">✕ Close</button><b id="zp">Page</b><button id="zl">Highlights</button></div>
+  <div id="zs"><div id="zw"><canvas id="zc"></canvas><div id="zh"></div></div></div>
+  <div id="zb"><button class="tg" id="zd">Highlight</button><button id="zcol" aria-label="Color"></button><button id="zu">Undo</button><button id="zmn">−</button><button id="zpl">+</button></div>
+</div>
+<div id="hs"><div id="hsh"><div class="t"><span>Highlights</span><button id="hsx">Done</button></div><div id="hg"></div></div></div>
 <script src="pdf.min.js"></script>
 <script src="page-flip.browser.js"></script>
 <script>
@@ -93,7 +125,7 @@ $("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").classList.
 function setFocus(on,push){document.body.classList.toggle("focus",on);if(on&&push)history.pushState({r:2},"");setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},250)}
 $("fs").onclick=()=>setFocus(true,true);
 $("ex").onclick=()=>history.back();
-addEventListener("popstate",()=>{if(document.body.classList.contains("focus"))setFocus(false,false);else if(cur)showLib()});
+addEventListener("popstate",()=>{if($("zv").classList.contains("on")){$("zv").classList.remove("on");return}if(document.body.classList.contains("focus"))setFocus(false,false);else if(cur)showLib()});
 let ac;function snd(){if(muted)return;try{ac=ac||new AudioContext();const n=ac.sampleRate*.2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.3;const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=1800;s.connect(f).connect(ac.destination);s.start()}catch(e){}}
 /* ---------- library ---------- */
 async function showLib(){
@@ -152,8 +184,8 @@ function build(startAt){
   for(let i=0;i<n;i++){const d=document.createElement("div");d.className="page";d.dataset.density=(i===0||i===n-1)?"hard":"soft";d.appendChild(document.createElement("canvas"));items.push(d)}
   const draw=i=>{if(i<0||i>=n||done.has(i))return;done.add(i);
     q=q.then(async()=>{const p=await pdf.getPage(i+1),sc=Math.min(3,pw*dpr/p.getViewport({scale:1}).width),v=p.getViewport({scale:sc}),c=items[i].firstChild;
-      c.width=v.width;c.height=v.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise}).catch(()=>{})};
-  const around=i=>{for(let j=i-2;j<=i+4;j++)draw(j)};
+      c.width=v.width;c.height=v.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise;const H=(cur.meta.hl||[]).filter(h=>h.p===i);if(H.length){x.globalCompositeOperation="multiply";H.forEach(h=>{x.fillStyle=h.c;x.fillRect(h.x*c.width,h.y*c.height,h.w*c.width,h.h*c.height)});x.globalCompositeOperation="source-over"}}).catch(()=>{})};
+  const around=i=>{for(let j=i-2;j<=i+4;j++)draw(j)};cur.redraw=i=>{done.delete(i);draw(i)};
   flip=new St.PageFlip($("flip"),{width:pw,height:ph,size:"fixed",showCover:true,usePortrait:true,maxShadowOpacity:.5,mobileScrollSupport:false,flippingTime:750});
   flip.loadFromHTML(items);
   const sl=$("sl");sl.max=n;
@@ -167,11 +199,75 @@ function build(startAt){
 addEventListener("keydown",e=>{if(!flip)return;if(e.key==="ArrowRight")flip.flipNext();if(e.key==="ArrowLeft")flip.flipPrev()});
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},350)});
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+/* ---------- zoom + highlights ---------- */
+const COL=["#ffe14d","#7ee08a","#ff8fb1","#7cc4ff"];let ci=0,zmode=false,zp=0,zz=1;
+const hlist=()=>cur.meta.hl||(cur.meta.hl=[]);
+const saveMeta=()=>rq("meta","readwrite",s=>s.put(cur.meta));
+const zfit=()=>{$("zw").style.width=($("zs").clientWidth*zz)+"px"};
+function drawHB(){const z=$("zh");z.innerHTML="";hlist().filter(h=>h.p===zp).forEach(h=>{const d=document.createElement("div");d.className="hb";Object.assign(d.style,{left:h.x*100+"%",top:h.y*100+"%",width:h.w*100+"%",height:h.h*100+"%",background:h.c});z.appendChild(d)})}
+async function openZoom(p,rect){
+  if(!cur)return;zp=p;history.pushState({r:3},"");$("zv").classList.add("on");$("zp").textContent="Page "+(p+1);
+  const zs=$("zs"),c=$("zc"),dpr=Math.min(devicePixelRatio||1,2.5);
+  const pg=await cur.pdf.getPage(p+1),b=pg.getViewport({scale:1}),v=pg.getViewport({scale:Math.min(2600,Math.round(zs.clientWidth*dpr*2.5))/b.width});
+  c.width=v.width;c.height=v.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
+  await pg.render({canvasContext:x,viewport:v}).promise;
+  zz=1;zfit();zs.scrollLeft=0;zs.scrollTop=0;drawHB();
+  if(rect){zz=Math.min(5,Math.max(1,.85/rect.w));zfit();const w=$("zw");zs.scrollLeft=(rect.x+rect.w/2)*w.clientWidth-zs.clientWidth/2;zs.scrollTop=(rect.y+rect.h/2)*w.clientHeight-zs.clientHeight/2}
+}
+function zoomBy(f){const zs=$("zs"),w=$("zw"),cx=zs.clientWidth/2,cy=zs.clientHeight/2,fx=(zs.scrollLeft+cx)/w.clientWidth,fy=(zs.scrollTop+cy)/w.clientHeight;zz=Math.min(6,Math.max(1,zz*f));zfit();zs.scrollLeft=fx*w.clientWidth-cx;zs.scrollTop=fy*w.clientHeight-cy}
+function addHL(r){
+  const c=$("zc"),ar=(r.h*c.height)/(r.w*c.width);let tw=300,th=Math.round(tw*ar);if(th>420){th=420;tw=Math.round(th/ar)}
+  const t=document.createElement("canvas");t.width=Math.max(20,tw);t.height=Math.max(12,th);const x=t.getContext("2d");
+  x.drawImage(c,r.x*c.width,r.y*c.height,r.w*c.width,r.h*c.height,0,0,t.width,t.height);x.globalCompositeOperation="multiply";x.fillStyle=COL[ci];x.fillRect(0,0,t.width,t.height);
+  hlist().push({id:Date.now(),p:zp,c:COL[ci],x:r.x,y:r.y,w:r.w,h:r.h,thumb:t.toDataURL("image/jpeg",.7)});
+  saveMeta();drawHB();cur.redraw&&cur.redraw(zp)}
+$("zx").onclick=()=>history.back();
+$("zd").onclick=()=>{zmode=!zmode;$("zd").classList.toggle("on",zmode)};
+$("zcol").onclick=()=>{ci=(ci+1)%COL.length;$("zcol").style.setProperty("--dot",COL[ci])};$("zcol").style.setProperty("--dot",COL[0]);
+$("zu").onclick=()=>{const a=hlist();for(let i=a.length-1;i>=0;i--)if(a[i].p===zp){a.splice(i,1);break}saveMeta();drawHB();cur.redraw&&cur.redraw(zp)};
+$("zmn").onclick=()=>zoomBy(.8);$("zpl").onclick=()=>zoomBy(1.25);
+$("zm").onclick=()=>{if(flip)openZoom(flip.getCurrentPageIndex())};
+$("zl").onclick=()=>openSheet();$("hlb").onclick=()=>openSheet();
+function openSheet(){
+  const g=$("hg"),a=hlist().slice().sort((u,v)=>u.p-v.p||u.y-v.y);g.innerHTML="";
+  $("hs").classList.add("on");
+  if(!a.length){g.innerHTML='<div id="empty" style="grid-column:1/-1;display:block;padding:30px 10px">No highlights yet.<br>Open the zoom view, turn on Highlight, and drag over text.</div>';return}
+  a.forEach(h=>{const d=document.createElement("div");d.className="ht";d.innerHTML='<img alt=""><small></small><i>×</i>';d.querySelector("img").src=h.thumb;d.querySelector("small").textContent="Page "+(h.p+1);
+    d.onclick=e=>{if(e.target.tagName==="I"){hlist().splice(hlist().indexOf(h),1);saveMeta();cur.redraw&&cur.redraw(h.p);openSheet();return}
+      $("hs").classList.remove("on");if(flip)flip.turnToPage(h.p);
+      if($("zv").classList.contains("on")){zp=h.p;history.back();setTimeout(()=>openZoom(h.p,h),150)}else openZoom(h.p,h)};
+    g.appendChild(d)})}
+$("hsx").onclick=()=>$("hs").classList.remove("on");
+$("hs").onclick=e=>{if(e.target.id==="hs")$("hs").classList.remove("on")};
+(()=>{const zs=$("zs");let mode=null,sx=0,sy=0,sl=0,sto=0,d0=1,z0=1,tmp=null,last=0,moved=false;
+ const pt=t=>{const r=$("zw").getBoundingClientRect();return[(t.clientX-r.left)/r.width,(t.clientY-r.top)/r.height]};
+ zs.addEventListener("touchstart",e=>{
+  if(e.touches.length===2){mode="pinch";d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)||1;z0=zz;if(tmp){tmp.remove();tmp=null}return}
+  const t=e.touches[0];sx=t.clientX;sy=t.clientY;moved=false;
+  if(zmode){mode="draw";const[a,b]=pt(t);tmp=document.createElement("div");tmp.className="hb";tmp.style.background=COL[ci];tmp.dataset.a=a;tmp.dataset.b=b;$("zh").appendChild(tmp)}
+  else{mode="pan";sl=zs.scrollLeft;sto=zs.scrollTop}
+ },{passive:false});
+ zs.addEventListener("touchmove",e=>{e.preventDefault();
+  if(mode==="pinch"&&e.touches.length===2){const A=e.touches[0],B=e.touches[1],d=Math.hypot(A.clientX-B.clientX,A.clientY-B.clientY),rc=zs.getBoundingClientRect(),cx=(A.clientX+B.clientX)/2-rc.left,cy=(A.clientY+B.clientY)/2-rc.top,w=$("zw"),fx=(zs.scrollLeft+cx)/w.clientWidth,fy=(zs.scrollTop+cy)/w.clientHeight;
+   zz=Math.min(6,Math.max(1,z0*d/d0));zfit();zs.scrollLeft=fx*w.clientWidth-cx;zs.scrollTop=fy*w.clientHeight-cy;return}
+  const t=e.touches[0];if(Math.abs(t.clientX-sx)+Math.abs(t.clientY-sy)>6)moved=true;
+  if(mode==="pan"){zs.scrollLeft=sl-(t.clientX-sx);zs.scrollTop=sto-(t.clientY-sy)}
+  else if(mode==="draw"&&tmp){const[a,b]=pt(t),x0=+tmp.dataset.a,y0=+tmp.dataset.b;Object.assign(tmp.style,{left:Math.min(a,x0)*100+"%",top:Math.min(b,y0)*100+"%",width:Math.abs(a-x0)*100+"%",height:Math.abs(b-y0)*100+"%"})}
+ },{passive:false});
+ zs.addEventListener("touchend",e=>{
+  if(mode==="pinch"){if(e.touches.length<2)mode=null;return}
+  if(mode==="draw"&&tmp){const[a,b]=pt(e.changedTouches[0]),x0=+tmp.dataset.a,y0=+tmp.dataset.b;tmp.remove();tmp=null;
+   const x=Math.max(0,Math.min(a,x0)),y=Math.max(0,Math.min(b,y0)),r={x,y,w:Math.min(1-x,Math.abs(a-x0)),h:Math.min(1-y,Math.abs(b-y0))},w=$("zw");
+   if(r.w*w.clientWidth>12&&r.h*w.clientHeight>8)addHL(r)}
+  else if(mode==="pan"&&!moved){const n=Date.now();if(n-last<320){zz=zz>1.2?1:2.5;zfit();last=0}else last=n}
+  mode=null});
+})();
+
 /* swipe anywhere: left = next page, right = previous page */
 (()=>{let x0=0,y0=0,t0=0,multi=false;const st=$("stage");
 st.addEventListener("touchstart",e=>{multi=e.touches.length>1;const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
 st.addEventListener("touchend",e=>{if(!flip||multi)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
- if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-t0<900){if(flip.getState&&flip.getState()!=="read")return;dx<0?flip.flipNext():flip.flipPrev()}},{passive:true});})();
+ if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-t0<900){if(flip.getState&&flip.getState()!=="read")return;dx<0?flip.flipNext():flip.flipPrev()}else if(Math.abs(dx)<12&&Math.abs(dy)<12&&Date.now()-t0<300){const n=Date.now();if(n-(window._lt||0)<320){window._lt=0;let p=flip.getCurrentPageIndex();if(flip.getOrientation&&flip.getOrientation()==="landscape"&&t.clientX>innerWidth/2&&p+1<cur.meta.n)p++;openZoom(p)}else window._lt=n}},{passive:true});})();
 showLib();
 </script>
 </body>
