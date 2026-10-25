@@ -87,7 +87,7 @@ $("fs").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():do
 let ac;function snd(){if(muted)return;try{ac=ac||new AudioContext();const n=ac.sampleRate*.2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.3;const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=1800;s.connect(f).connect(ac.destination);s.start()}catch(e){}}
 /* ---------- library ---------- */
 async function showLib(){
-  if(flip){flip.destroy();flip=null}cur=null;
+  kill();cur=null;
   document.body.className="lib";$("book").style.display="none";$("foot").style.display="none";$("lib").style.display="block";$("title").textContent="Library";
   const all=(await rq("meta","readonly",s=>s.getAll())).sort((a,b)=>b.time-a.time);
   $("empty").style.display=all.length?"none":"block";
@@ -113,6 +113,7 @@ $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
   openBook(buf,m,true)};
 /* ---------- reader ---------- */
 let flip=null,cur=null;
+function kill(){try{if(flip)flip.destroy()}catch(e){}flip=null}
 const busy=(on,t)=>{$("ld").style.display=on?"flex":"none";if(t)$("lm").textContent=t};
 async function openBook(buf,meta,isNew){
   busy(true,"Opening…");$("bar").firstElementChild.style.width="30%";
@@ -130,14 +131,14 @@ async function openBook(buf,meta,isNew){
     cur={pdf,meta,w:b.width,h:b.height,buf};
     document.body.className="rd";$("lib").style.display="none";$("book").style.display="block";$("foot").style.display="grid";$("title").textContent=meta.name;
     busy(false);build(meta.page||0);
-  }catch(e){busy(true,"Couldn’t read that PDF.");setTimeout(()=>{busy(false);showLib()},1800)}
+  }catch(e){console.error(e);busy(true,"Couldn’t open this book: "+((e&&e.message)||e));$("bar").firstElementChild.style.width="0";setTimeout(()=>{busy(false);showLib()},3500)}
 }
 function build(startAt){
-  if(flip){flip.destroy();flip=null}
+  kill();
   const {pdf,meta,w,h}=cur,n=meta.n,st=$("stage");
-  const portrait=innerWidth<700,k=Math.min((st.clientWidth-12)/(portrait?w:w*2),(st.clientHeight-12)/h);
+  const portrait=innerWidth<700||innerHeight>innerWidth,k=Math.min((st.clientWidth-12)/(portrait?w:w*2),(st.clientHeight-12)/h);
   const pw=Math.floor(w*k),ph=Math.floor(h*k),dpr=Math.min(devicePixelRatio||1,2);
-  $("flip").innerHTML="";const items=[],done=new Set();let q=Promise.resolve();
+  st.innerHTML='<div id="flip"></div>';const items=[],done=new Set();let q=Promise.resolve();
   for(let i=0;i<n;i++){const d=document.createElement("div");d.className="page";d.dataset.density=(i===0||i===n-1)?"hard":"soft";d.appendChild(document.createElement("canvas"));items.push(d)}
   const draw=i=>{if(i<0||i>=n||done.has(i))return;done.add(i);
     q=q.then(async()=>{const p=await pdf.getPage(i+1),sc=Math.min(3,pw*dpr/p.getViewport({scale:1}).width),v=p.getViewport({scale:sc}),c=items[i].firstChild;
