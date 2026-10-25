@@ -154,7 +154,8 @@ $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
   if(old){openBook(buf,old);return}
   openBook(buf,m,true)};
 /* ---------- reader ---------- */
-let flip=null,cur=null;
+let flip=null,cur=null,lock=false;
+function go(next){if(lock||!flip)return;lock=true;next?flip.flipNext():flip.flipPrev();setTimeout(()=>{lock=false},800)}
 function kill(){try{if(flip)flip.destroy()}catch(e){}flip=null}
 const busy=(on,t)=>{$("ld").style.display=on?"flex":"none";if(t)$("lm").textContent=t};
 async function openBook(buf,meta,isNew){
@@ -186,7 +187,7 @@ function build(startAt){
     q=q.then(async()=>{const p=await pdf.getPage(i+1),sc=Math.min(3,pw*dpr/p.getViewport({scale:1}).width),v=p.getViewport({scale:sc}),c=items[i].firstChild;
       c.width=v.width;c.height=v.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise;const H=(cur.meta.hl||[]).filter(h=>h.p===i);if(H.length){x.globalCompositeOperation="multiply";H.forEach(h=>{x.fillStyle=h.c;x.fillRect(h.x*c.width,h.y*c.height,h.w*c.width,h.h*c.height)});x.globalCompositeOperation="source-over"}}).catch(()=>{})};
   const around=i=>{for(let j=i-2;j<=i+4;j++)draw(j)};cur.redraw=i=>{done.delete(i);draw(i)};
-  flip=new St.PageFlip($("flip"),{width:pw,height:ph,size:"fixed",showCover:true,usePortrait:true,maxShadowOpacity:.5,mobileScrollSupport:false,flippingTime:750});
+  flip=new St.PageFlip($("flip"),{width:pw,height:ph,size:"fixed",showCover:true,usePortrait:true,maxShadowOpacity:.5,mobileScrollSupport:false,useMouseEvents:false,flippingTime:750});
   flip.loadFromHTML(items);
   const sl=$("sl");sl.max=n;
   const upd=()=>{const i=flip.getCurrentPageIndex();sl.value=i+1;$("pg").textContent=(i+1)+" / "+n;$("pv").disabled=i<=0;$("nx").disabled=i>=n-1;around(i);meta.page=i;clearTimeout(upd.t);upd.t=setTimeout(()=>rq("meta","readwrite",s=>s.put(meta)),600)};
@@ -194,9 +195,9 @@ function build(startAt){
   if(startAt>0)flip.turnToPage(Math.min(startAt,n-1));
   around(startAt);upd();
   sl.oninput=()=>{flip.turnToPage(+sl.value-1);upd()};
-  $("pv").onclick=()=>flip.flipPrev();$("nx").onclick=()=>flip.flipNext();
+  $("pv").onclick=()=>go(false);$("nx").onclick=()=>go(true);
 }
-addEventListener("keydown",e=>{if(!flip)return;if(e.key==="ArrowRight")flip.flipNext();if(e.key==="ArrowLeft")flip.flipPrev()});
+addEventListener("keydown",e=>{if(!flip)return;if(e.key==="ArrowRight")go(true);if(e.key==="ArrowLeft")go(false)});
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},350)});
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 /* ---------- zoom + highlights ---------- */
@@ -267,7 +268,7 @@ $("hs").onclick=e=>{if(e.target.id==="hs")$("hs").classList.remove("on")};
 (()=>{let x0=0,y0=0,t0=0,multi=false;const st=$("stage");
 st.addEventListener("touchstart",e=>{multi=e.touches.length>1;const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
 st.addEventListener("touchend",e=>{if(!flip||multi)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
- if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-t0<900){if(flip.getState&&flip.getState()!=="read")return;dx<0?flip.flipNext():flip.flipPrev()}else if(Math.abs(dx)<12&&Math.abs(dy)<12&&Date.now()-t0<300){const n=Date.now();if(n-(window._lt||0)<320){window._lt=0;let p=flip.getCurrentPageIndex();if(flip.getOrientation&&flip.getOrientation()==="landscape"&&t.clientX>innerWidth/2&&p+1<cur.meta.n)p++;openZoom(p)}else window._lt=n}},{passive:true});})();
+ if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-t0<900){go(dx<0)}else if(Math.abs(dx)<12&&Math.abs(dy)<12&&Date.now()-t0<300){const n=Date.now();if(n-(window._lt||0)<320){window._lt=0;let p=flip.getCurrentPageIndex();if(flip.getOrientation&&flip.getOrientation()==="landscape"&&t.clientX>innerWidth/2&&p+1<cur.meta.n)p++;openZoom(p)}else window._lt=n}},{passive:true});})();
 showLib();
 </script>
 </body>
