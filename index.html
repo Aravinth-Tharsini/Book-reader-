@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDF Book Reader</title>
+<style>
+:root{--bg:#f4efe6;--fg:#2b2118;--muted:#7a6b5b;--card:#fffaf0;--accent:#8a4b2a;--shadow:rgba(60,35,15,.35);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1511;--fg:#f1e8da;--muted:#a8998a;--card:#251e18;--accent:#e0a074;--shadow:rgba(0,0,0,.7)}}
+:root[data-theme="dark"]{--bg:#1a1511;--fg:#f1e8da;--muted:#a8998a;--card:#251e18;--accent:#e0a074;--shadow:rgba(0,0,0,.7)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:8px}
+h1{font-size:1.05rem;margin:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button,.btn{font:inherit;font-size:.9rem;background:var(--accent);color:var(--bg);border:0;border-radius:999px;padding:9px 16px;cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--muted)}
+button:disabled{opacity:.4}
+main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+#drop{width:min(520px,88%);border:2px dashed var(--muted);border-radius:18px;padding:44px 20px;text-align:center;background:var(--card)}
+#drop.over{border-color:var(--accent)}
+#drop p{margin:6px 0 18px;color:var(--muted)}
+#drop .big{font-size:2.6rem;margin:0}
+#book{display:none;width:100%;height:100%}
+#stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.stf__parent{filter:drop-shadow(0 12px 22px var(--shadow))}
+#loading{display:none;text-align:center;color:var(--muted)}
+#bar{width:220px;height:6px;background:var(--card);border-radius:3px;margin:12px auto 0;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+footer{display:none;align-items:center;justify-content:center;gap:12px;padding:10px 16px 14px}
+#pg{min-width:90px;text-align:center;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">PDF Book Reader</h1>
+  <button class="ghost" id="newBtn" style="display:none">Open another</button>
+</header>
+<main>
+  <div id="drop">
+    <p class="big">📖</p>
+    <p>Choose a PDF and it turns into a page-turning book automatically.</p>
+    <button id="pick">Select PDF</button>
+    <input type="file" id="file" accept="application/pdf" hidden>
+  </div>
+  <div id="loading"><div id="lmsg">Preparing…</div><div id="bar"><i></i></div></div>
+  <div id="book"><div id="stage"><div id="flip"></div></div></div>
+</main>
+<footer id="foot">
+  <button class="ghost" id="prev">‹ Prev</button>
+  <span id="pg"></span>
+  <button class="ghost" id="next">Next ›</button>
+</footer>
+
+<script src="pdf.min.js"></script>
+<script src="page-flip.browser.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+let flip = null;
+
+$("pick").onclick = () => $("file").click();
+$("newBtn").onclick = () => location.reload();
+$("file").onchange = e => e.target.files[0] && load(e.target.files[0]);
+const drop = $("drop");
+["dragover","dragenter"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.add("over");}));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.remove("over");}));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) load(f); });
+
+async function load(file){
+  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) { alert("Please choose a PDF file."); return; }
+  $("drop").style.display = "none";
+  $("loading").style.display = "block";
+  $("title").textContent = file.name.replace(/\.pdf$/i, "");
+  try {
+    const pdf = await pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
+    const n = pdf.numPages, imgs = [];
+    let w = 0, h = 0;
+    for (let i = 1; i <= n; i++) {
+      $("lmsg").textContent = "Building book… page " + i + " of " + n;
+      $("bar").firstElementChild.style.width = (i / n * 100) + "%";
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({scale: 1});
+      const scale = Math.min(2, 900 / base.width);
+      const vp = page.getViewport({scale});
+      const c = document.createElement("canvas");
+      c.width = vp.width; c.height = vp.height;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      await page.render({canvasContext: ctx, viewport: vp}).promise;
+      if (i === 1) { w = vp.width; h = vp.height; }
+      imgs.push(c.toDataURL("image/jpeg", 0.85));
+    }
+    openBook(imgs, w, h);
+  } catch (err) {
+    $("lmsg").textContent = "Couldn’t read that PDF. Try another file.";
+    $("newBtn").style.display = "inline-block";
+  }
+}
+
+function openBook(imgs, w, h){
+  $("loading").style.display = "none";
+  $("book").style.display = "block";
+  $("foot").style.display = "flex";
+  $("newBtn").style.display = "inline-block";
+  const stage = $("stage");
+  const portrait = innerWidth < 700;
+  const availW = stage.clientWidth - 16, availH = stage.clientHeight - 16;
+  const spreadW = portrait ? w : w * 2;
+  const k = Math.min(availW / spreadW, availH / h);
+  const pw = Math.floor(w * k), ph = Math.floor(h * k);
+  flip = new St.PageFlip($("flip"), {
+    width: pw, height: ph, size: "fixed", showCover: true, usePortrait: true,
+    maxShadowOpacity: .5, mobileScrollSupport: false, drawShadow: true, flippingTime: 800
+  });
+  flip.loadFromImages(imgs);
+  const upd = () => {
+    const i = flip.getCurrentPageIndex() + 1, t = flip.getPageCount();
+    $("pg").textContent = "Page " + i + " / " + t;
+    $("prev").disabled = i <= 1;
+    $("next").disabled = i >= t;
+  };
+  flip.on("flip", upd); upd();
+  $("prev").onclick = () => flip.flipPrev();
+  $("next").onclick = () => flip.flipNext();
+  addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") flip.flipNext();
+    if (e.key === "ArrowLeft") flip.flipPrev();
+  });
+}
+</script>
+</body>
+</html>
