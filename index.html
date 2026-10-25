@@ -35,7 +35,7 @@ main{flex:1;min-height:0;position:relative;overflow:auto}
 .card i{position:absolute;top:-6px;right:-6px;font-style:normal;background:#ff3b30;color:#fff;border-radius:50%;width:22px;height:22px;line-height:21px;text-align:center;font-size:.95rem;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 #empty{text-align:center;color:var(--mut);padding:70px 10px;font-size:1rem;line-height:1.5}
 #book{display:none;height:100%}
-#stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#stage{touch-action:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .stf__parent{filter:drop-shadow(0 14px 24px var(--sh))}
 .page{background:#fff}
 .page canvas{width:100%;height:100%;display:block}
@@ -45,6 +45,10 @@ main{flex:1;min-height:0;position:relative;overflow:auto}
 #sl{accent-color:var(--acc);width:100%}
 #pg{min-width:70px;text-align:center;color:var(--mut);font-size:.8rem;font-variant-numeric:tabular-nums}
 #pv,#nx{font-size:1.7rem;line-height:1;padding:4px 12px}
+body.focus header,body.focus footer{display:none!important}
+body.focus main{padding-top:var(--sat);padding-bottom:var(--sab);box-sizing:border-box}
+#ex{display:none;position:fixed;top:calc(8px + var(--sat));right:10px;z-index:9;width:36px;height:36px;padding:0;border-radius:50%;background:var(--bar);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--fg);font-size:1rem;opacity:.75;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+body.focus #ex{display:block}
 </style>
 </head>
 <body>
@@ -62,6 +66,7 @@ main{flex:1;min-height:0;position:relative;overflow:auto}
   <div id="book"><div id="stage"><div id="flip"></div></div></div>
   <div id="ld"><div id="lm">Opening…</div><div id="bar"><i></i></div></div>
 </main>
+<button id="ex" aria-label="Exit full screen">✕</button>
 <footer id="foot">
   <button id="pv">‹</button>
   <input type="range" id="sl" min="1" max="1" value="1">
@@ -85,7 +90,10 @@ const applyTheme=()=>{document.documentElement.dataset.theme=themes[ti];ls("them
 $("th").onclick=()=>{ti=(ti+1)%3;applyTheme()};
 let muted=ls("muted")==="1";$("snd").classList.toggle("off",muted);
 $("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").classList.toggle("off",muted)};
-$("fs").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+function setFocus(on,push){document.body.classList.toggle("focus",on);if(on&&push)history.pushState({r:2},"");setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},250)}
+$("fs").onclick=()=>setFocus(true,true);
+$("ex").onclick=()=>history.back();
+addEventListener("popstate",()=>{if(document.body.classList.contains("focus"))setFocus(false,false);else if(cur)showLib()});
 let ac;function snd(){if(muted)return;try{ac=ac||new AudioContext();const n=ac.sampleRate*.2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.3;const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=1800;s.connect(f).connect(ac.destination);s.start()}catch(e){}}
 /* ---------- library ---------- */
 async function showLib(){
@@ -105,7 +113,7 @@ async function showLib(){
     $("grid").appendChild(c);
   });
 }
-$("home").onclick=showLib;
+$("home").onclick=()=>{if(history.state&&history.state.r)history.back();else showLib()};
 $("pick").onclick=()=>$("file").click();
 $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   const buf=await f.arrayBuffer();
@@ -131,14 +139,14 @@ async function openBook(buf,meta,isNew){
     meta.time=Date.now();await rq("meta","readwrite",s=>s.put(meta));
     const p1=await pdf.getPage(1),b=p1.getViewport({scale:1});
     cur={pdf,meta,w:b.width,h:b.height,buf};
-    document.body.className="rd";$("lib").style.display="none";$("book").style.display="block";$("foot").style.display="grid";$("title").textContent=meta.name;
+    document.body.className="rd";history.pushState({r:1},"");$("lib").style.display="none";$("book").style.display="block";$("foot").style.display="grid";$("title").textContent=meta.name;
     busy(false);build(meta.page||0);
   }catch(e){console.error(e);busy(true,"Couldn’t open this book: "+((e&&e.message)||e));$("bar").firstElementChild.style.width="0";setTimeout(()=>{busy(false);showLib()},3500)}
 }
 function build(startAt){
   kill();
   const {pdf,meta,w,h}=cur,n=meta.n,st=$("stage");
-  const portrait=innerWidth<700||innerHeight>innerWidth,k=Math.min((st.clientWidth-12)/(portrait?w:w*2),(st.clientHeight-12)/h);
+  const portrait=innerWidth<700||innerHeight>innerWidth,k=Math.min((st.clientWidth-4)/(portrait?w:w*2),(st.clientHeight-4)/h);
   const pw=Math.floor(w*k),ph=Math.floor(h*k),dpr=Math.min(devicePixelRatio||1,2);
   st.innerHTML='<div id="flip"></div>';const items=[],done=new Set();let q=Promise.resolve();
   for(let i=0;i<n;i++){const d=document.createElement("div");d.className="page";d.dataset.density=(i===0||i===n-1)?"hard":"soft";d.appendChild(document.createElement("canvas"));items.push(d)}
@@ -159,6 +167,11 @@ function build(startAt){
 addEventListener("keydown",e=>{if(!flip)return;if(e.key==="ArrowRight")flip.flipNext();if(e.key==="ArrowLeft")flip.flipPrev()});
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{if(cur&&flip)build(flip.getCurrentPageIndex())},350)});
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+/* swipe anywhere: left = next page, right = previous page */
+(()=>{let x0=0,y0=0,t0=0,multi=false;const st=$("stage");
+st.addEventListener("touchstart",e=>{multi=e.touches.length>1;const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
+st.addEventListener("touchend",e=>{if(!flip||multi)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+ if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-t0<900){if(flip.getState&&flip.getState()!=="read")return;dx<0?flip.flipNext():flip.flipPrev()}},{passive:true});})();
 showLib();
 </script>
 </body>
