@@ -5,59 +5,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Book Reader</title>
 <style>
-:root{--bg:#f4efe6;--fg:#2b2118;--mut:#7a6b5b;--card:#fffaf0;--acc:#8a4b2a;--sh:rgba(60,35,15,.4);--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-:root[data-theme="sepia"]{--bg:#e8d9b8;--fg:#3b2a14;--mut:#7d6a48;--card:#f3e6c8;--acc:#7a3f1a}
-:root[data-theme="dark"]{--bg:#16120f;--fg:#f1e8da;--mut:#a8998a;--card:#241d17;--acc:#e0a074;--sh:rgba(0,0,0,.8);--on:#16120f}
+:root{--bg:#f2f2f7;--fg:#000;--mut:#8e8e93;--card:#fff;--acc:#007aff;--bar:rgba(249,249,249,.8);--sep:rgba(60,60,67,.18);--sh:rgba(0,0,0,.28);--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="sepia"]{--bg:#efe4cc;--fg:#3b2a14;--mut:#8a7650;--card:#f8f0dc;--acc:#a0522d;--bar:rgba(239,228,204,.82);--sep:rgba(90,60,20,.2)}
+:root[data-theme="dark"]{--bg:#000;--fg:#fff;--mut:#8e8e93;--card:#1c1c1e;--acc:#0a84ff;--bar:rgba(28,28,30,.8);--sep:rgba(84,84,88,.5);--sh:rgba(0,0,0,.9)}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;display:flex;flex-direction:column;overflow:hidden;transition:background .3s}
-header,footer{display:flex;align-items:center;gap:8px;padding:8px 12px}
-header{justify-content:space-between}
-h1{font-size:1rem;margin:0;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-button{font:inherit;font-size:.9rem;background:var(--acc);color:var(--on);border:0;border-radius:999px;padding:9px 15px;cursor:pointer}
-button.g{background:transparent;color:var(--fg);border:1px solid var(--mut)}
-button:disabled{opacity:.35}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+header,footer{display:grid;align-items:center;padding:8px 14px;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);z-index:3}
+header{grid-template-columns:1fr auto 1fr;border-bottom:.5px solid var(--sep)}
+footer{grid-template-columns:auto 1fr auto auto;gap:10px;border-top:.5px solid var(--sep);display:none}
+h1{font-size:1.02rem;font-weight:600;margin:0;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ic{justify-self:end;display:flex;gap:2px}
+button{font:inherit;font-size:1.02rem;background:none;color:var(--acc);border:0;padding:8px 10px;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
+button:active{opacity:.4}
+button:disabled{opacity:.3}
+.tb{justify-self:start;padding-left:2px}
+button svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#snd.off{opacity:.4}
+body.lib h1,body.lib #home,body.lib #snd,body.lib #fs{visibility:hidden}
 main{flex:1;min-height:0;position:relative;overflow:auto}
-#lib{padding:12px 16px 30px;max-width:900px;margin:0 auto}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px;margin-top:16px}
-.card{background:var(--card);border-radius:10px;padding:8px;position:relative;cursor:pointer;box-shadow:0 4px 10px var(--sh)}
-.card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:5px;display:block;background:#fff}
-.card b{display:block;font-size:.8rem;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lib{padding:4px 18px 40px;max-width:900px;margin:0 auto}
+.lt{display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px}
+.lt h2{font-size:2.1rem;font-weight:700;margin:0;letter-spacing:-.02em}
+#pick{background:var(--acc);color:var(--on);font-weight:600;font-size:.95rem;padding:8px 16px;border-radius:999px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px;margin-top:18px}
+.card{background:var(--card);border-radius:14px;padding:8px;position:relative;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;display:block;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.card b{display:block;font-size:.82rem;font-weight:600;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card small{color:var(--mut);font-size:.72rem}
-.card i{position:absolute;top:2px;right:4px;font-style:normal;background:var(--bg);border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;color:var(--mut)}
-#empty{text-align:center;color:var(--mut);padding:40px 10px}
+.card i{position:absolute;top:-6px;right:-6px;font-style:normal;background:#ff3b30;color:#fff;border-radius:50%;width:22px;height:22px;line-height:21px;text-align:center;font-size:.95rem;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#empty{text-align:center;color:var(--mut);padding:70px 10px;font-size:1rem;line-height:1.5}
 #book{display:none;height:100%}
 #stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.stf__parent{filter:drop-shadow(0 12px 22px var(--sh))}
+.stf__parent{filter:drop-shadow(0 14px 24px var(--sh))}
 .page{background:#fff}
 .page canvas{width:100%;height:100%;display:block}
 #ld{display:none;position:absolute;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;color:var(--mut);z-index:5}
-#bar{width:220px;height:6px;background:var(--card);border-radius:3px;margin-top:12px;overflow:hidden}
+#bar{width:200px;height:4px;background:var(--sep);border-radius:2px;margin-top:14px;overflow:hidden}
 #bar i{display:block;height:100%;width:0;background:var(--acc)}
-footer{display:none}
-#sl{flex:1;accent-color:var(--acc)}
-#pg{min-width:76px;text-align:center;color:var(--mut);font-size:.82rem}
+#sl{accent-color:var(--acc);width:100%}
+#pg{min-width:70px;text-align:center;color:var(--mut);font-size:.8rem;font-variant-numeric:tabular-nums}
+#pv,#nx{font-size:1.7rem;line-height:1;padding:4px 12px}
 </style>
 </head>
 <body>
 <header>
-  <button class="g" id="home">☰</button>
-  <h1 id="title">My Library</h1>
-  <span><button class="g" id="snd">🔊</button> <button class="g" id="th">🌓</button> <button class="g" id="fs">⛶</button></span>
+  <button class="tb" id="home">‹ Library</button>
+  <h1 id="title">Library</h1>
+  <span class="ic"><button id="snd" aria-label="Sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg></button><button id="th" aria-label="Theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 3.5a8.5 8.5 0 010 17z" fill="currentColor"/></svg></button><button id="fs" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></span>
 </header>
 <main>
   <div id="lib">
-    <button id="pick">＋ Open a PDF</button><input type="file" id="file" accept="application/pdf" hidden>
+    <div class="lt"><h2>Library</h2><button id="pick">＋ Add PDF</button></div><input type="file" id="file" accept="application/pdf" hidden>
     <div id="grid"></div>
-    <div id="empty">📖<br>Your books will appear here.<br>They are saved on this device, so you can read them offline.</div>
+    <div id="empty">📚<br><b>No Books Yet</b><br>Tap “Add PDF” to start reading.<br>Books are saved on this device for offline use.</div>
   </div>
   <div id="book"><div id="stage"><div id="flip"></div></div></div>
   <div id="ld"><div id="lm">Opening…</div><div id="bar"><i></i></div></div>
 </main>
 <footer id="foot">
-  <button class="g" id="pv">‹</button>
+  <button id="pv">‹</button>
   <input type="range" id="sl" min="1" max="1" value="1">
   <span id="pg"></span>
-  <button class="g" id="nx">›</button>
+  <button id="nx">›</button>
 </footer>
 <script src="pdf.min.js"></script>
 <script src="page-flip.browser.js"></script>
@@ -72,14 +81,14 @@ const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorag
 const themes=["light","sepia","dark"];let ti=Math.max(0,themes.indexOf(ls("theme")));
 const applyTheme=()=>{document.documentElement.dataset.theme=themes[ti];ls("theme",themes[ti])};applyTheme();
 $("th").onclick=()=>{ti=(ti+1)%3;applyTheme()};
-let muted=ls("muted")==="1";$("snd").textContent=muted?"🔇":"🔊";
-$("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").textContent=muted?"🔇":"🔊"};
+let muted=ls("muted")==="1";$("snd").classList.toggle("off",muted);
+$("snd").onclick=()=>{muted=!muted;ls("muted",muted?"1":"0");$("snd").classList.toggle("off",muted)};
 $("fs").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
 let ac;function snd(){if(muted)return;try{ac=ac||new AudioContext();const n=ac.sampleRate*.2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.3;const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=1800;s.connect(f).connect(ac.destination);s.start()}catch(e){}}
 /* ---------- library ---------- */
 async function showLib(){
   if(flip){flip.destroy();flip=null}cur=null;
-  $("book").style.display="none";$("foot").style.display="none";$("lib").style.display="block";$("title").textContent="My Library";
+  document.body.className="lib";$("book").style.display="none";$("foot").style.display="none";$("lib").style.display="block";$("title").textContent="Library";
   const all=(await rq("meta","readonly",s=>s.getAll())).sort((a,b)=>b.time-a.time);
   $("empty").style.display=all.length?"none":"block";
   $("grid").innerHTML="";
@@ -119,7 +128,7 @@ async function openBook(buf,meta,isNew){
     meta.time=Date.now();await rq("meta","readwrite",s=>s.put(meta));
     const p1=await pdf.getPage(1),b=p1.getViewport({scale:1});
     cur={pdf,meta,w:b.width,h:b.height,buf};
-    $("lib").style.display="none";$("book").style.display="block";$("foot").style.display="flex";$("title").textContent=meta.name;
+    document.body.className="rd";$("lib").style.display="none";$("book").style.display="block";$("foot").style.display="grid";$("title").textContent=meta.name;
     busy(false);build(meta.page||0);
   }catch(e){busy(true,"Couldn’t read that PDF.");setTimeout(()=>{busy(false);showLib()},1800)}
 }
