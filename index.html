@@ -127,6 +127,7 @@ function openBook(imgs, w, h){
     if (e.key === "ArrowLeft") flip.flipPrev();
   });
 }
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 </script>
 </body>
 </html>
